@@ -1,0 +1,151 @@
+﻿@using CommandPatternDemo.Commands  
+@using CommandPatternDemo.Service  
+
+@inject CommandManager CommandManager  
+@inject ShortcutManager ShortcutManager  
+
+<div style="display:flex;">
+    <div @onkeydown="HandleKey" tabindex="0" style="outline: none; width: 100%; height: 100%; position: relative;">  
+    <button @onclick="AddBox">Add Box</button>
+    <button @onclick="Undo">Undo</button>
+    <button @onclick="Redo">Redo</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width + 10, box.Height + 10),"increse size"))">Increase Size</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width - 10, box.Height - 10),"reduce size"))">Reduce Size</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, -10, 0),"move left"))">Move Left</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 10, 0),"move right"))">Move Right</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, 10),"move down"))">Move Down</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, -10),"move up"))">Move Up</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new ChangeColorCommand(box, "#e74c3c"),"change color"))">Change Color</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius + 5),"increse border radius"))">Increase Border Radius</button>
+    <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius - 5),"reduce border radius"))">Reduce Border Radius</button>
+
+    <div style="position: relative; width: 800px; height: 600px; border: 1px solid #ccc;">  
+        @foreach (var box in Boxes)  
+        {  
+            <div style="  
+                    position: absolute;  
+                    left:@($"{box.X}px");  
+                    top:@($"{box.Y}px");  
+                    width:@($"{box.Width}px");  
+                    height:@($"{box.Height}px");  
+                    background:@box.Color;  
+                    border-radius:@($"{box.BorderRadius}px");  
+                    border: 2px solid black;
+                    outline: @(box == SelectedBox ? "solid 1px" : "none")"
+                 type="button" @onclick="@(()=> SelectedBox = box)"></div>  
+        }  
+    </div>  
+</div>
+    <div style="display:flex; gap:10px">
+        <div>
+            <div>UndoList</div>
+            @foreach (var x in CommandManager.UndoList)
+            {
+                <div>@x</div>
+            }
+
+        </div>
+
+        <div>
+            <div>RedoList</div>
+            @foreach (var x in CommandManager.RedoList)
+            {
+                <div>@x</div>
+            }
+
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private List<Box> Boxes = new();  
+    private Box? SelectedBox;  
+
+
+    protected override void OnInitialized() 
+    {  
+        ShortcutManager.Register("arrowdown", () => SelectedBox != null ? new MoveBoxCommand(SelectedBox, 0, 10) : null, "move down");
+        ShortcutManager.Register("arrowup", () => SelectedBox != null ? new MoveBoxCommand(SelectedBox, 0, -10) : null, "move up");
+        ShortcutManager.Register("arrowleft", () => SelectedBox != null ? new MoveBoxCommand(SelectedBox, -10, 0) : null ,"move left");
+        ShortcutManager.Register("arrowright", () => SelectedBox != null ? new MoveBoxCommand(SelectedBox, 10, 0) : null, "move right");
+        ShortcutManager.Register("c", () => SelectedBox != null ? new ChangeColorCommand(SelectedBox, "#e74c3c") : null, "change color red");
+        ShortcutManager.Register("shift+c", () => SelectedBox != null ? new ChangeColorCommand(SelectedBox, "#3498db") : null, "change color blue");
+
+        ShortcutManager.Register("r", () => SelectedBox != null ? new ChangeBorderRadiusCommand(SelectedBox, SelectedBox.BorderRadius + 5) : null, "increse border radius");
+        ShortcutManager.Register("shift+r", () => SelectedBox != null ? new ChangeBorderRadiusCommand(SelectedBox, SelectedBox.BorderRadius - 5) : null, "reduce border radius");
+
+        ShortcutManager.Register("s", () => SelectedBox != null ? new ResizeBoxCommand(SelectedBox, SelectedBox.Width + 10, SelectedBox.Height + 10) : null, "increse size");
+        ShortcutManager.Register("shift+s", () => SelectedBox != null ? new ResizeBoxCommand(SelectedBox, SelectedBox.Width - 10, SelectedBox.Height - 10) : null, "reduce size");
+
+        // Register Ctrl+Z for Undo and Ctrl+Y for Redo
+        // ShortcutManager.Register("ctrl+z", () => new DelegateCommand(CommandManager.Undo));
+        // ShortcutManager.Register("ctrl+y", () => new DelegateCommand(CommandManager.Redo));
+    }  
+
+    void AddBox()  
+    {  
+        var box = new Box { X = 50, Y = 50 };  
+        var cmd = new AddBoxCommand(Boxes, box);  
+        CommandManager.ExecuteCommand(cmd,"add command");  
+    }  
+
+    void Undo() => CommandManager.Undo();  
+    void Redo() => CommandManager.Redo();  
+
+    void HandleKey(KeyboardEventArgs e)  
+    {
+
+        var key = NormalizeKey(e);
+
+        Console.WriteLine($"Key pressed: {key}");
+        if(key == "ctrl+z")
+        {
+            CommandManager.Undo();
+            return;
+        }
+        else if(key == "ctrl+y")
+        {
+            CommandManager.Redo();
+            return;
+        }
+        var cmd = ShortcutManager.GetCommand(key);  
+        if (cmd.Item1 != null)  
+        {  
+            CommandManager.ExecuteCommand(cmd.Item1,cmd.Item2);  
+        }  
+    }  
+
+    private string NormalizeKey(KeyboardEventArgs e)
+    {
+        var parts = new List<string>();
+        if (e.CtrlKey) parts.Add("ctrl");
+        if (e.ShiftKey) parts.Add("shift");
+        if (e.AltKey) parts.Add("alt");
+
+        var key = e.Key.ToLower();
+
+        // Normalize special keys
+        key = key switch
+        {
+            " " => "space",
+            "arrowup" => "arrowup",
+            "arrowdown" => "arrowdown",
+            "arrowleft" => "arrowleft",
+            "arrowright" => "arrowright",
+            _ => key
+        };
+
+        parts.Add(key);
+        return string.Join("+", parts);
+    }
+
+    void ExecuteIfSelected(Func<Box, ICommand> commandFactory,string commandName)
+    {
+        if (SelectedBox != null)
+        {
+            var cmd = commandFactory(SelectedBox);
+            CommandManager.ExecuteCommand(cmd, commandName);
+        }
+    }
+}
