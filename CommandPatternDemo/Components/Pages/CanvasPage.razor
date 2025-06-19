@@ -312,6 +312,8 @@
 
     protected override void OnInitialized() 
     {  
+        ShortcutManager.Register("a", () => SelectedBox != null ? new AddBoxCommand(Boxes, new Box { X = 50, Y = 50 },(b)=>SelectedBox = b) : null, "add box");
+
         ShortcutManager.Register("arrowdown", () => SelectedBox != null ? new MoveBoxCommand(SelectedBox, 0, 10) : null, "move down");
         ShortcutManager.Register("arrowup", () => SelectedBox != null ? new MoveBoxCommand(SelectedBox, 0, -10) : null, "move up");
         ShortcutManager.Register("arrowleft", () => SelectedBox != null ? new MoveBoxCommand(SelectedBox, -10, 0) : null ,"move left");
@@ -333,7 +335,7 @@
     void AddBox()  
     {  
         var box = new Box { X = 50, Y = 50 };  
-        var cmd = new AddBoxCommand(Boxes, box);  
+        var cmd = new AddBoxCommand(Boxes, box, (b) => SelectedBox = b);
         CommandManager.ExecuteCommand(cmd,"add command");  
     }  
 
