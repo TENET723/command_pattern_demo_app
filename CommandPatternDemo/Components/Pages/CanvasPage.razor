@@ -4,55 +4,262 @@
 @inject CommandManager CommandManager  
 @inject ShortcutManager ShortcutManager  
 
-<div style="display:flex;">
-    <div @onkeydown="HandleKey" tabindex="0" style="outline: none; width: 100%; height: 100%; position: relative;">  
-    <button @onclick="AddBox">Add Box</button>
-    <button @onclick="Undo">Undo</button>
-    <button @onclick="Redo">Redo</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width + 10, box.Height + 10),"increse size"))">Increase Size</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width - 10, box.Height - 10),"reduce size"))">Reduce Size</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, -10, 0),"move left"))">Move Left</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 10, 0),"move right"))">Move Right</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, 10),"move down"))">Move Down</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, -10),"move up"))">Move Up</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new ChangeColorCommand(box, "#e74c3c"),"change color"))">Change Color</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius + 5),"increse border radius"))">Increase Border Radius</button>
-    <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius - 5),"reduce border radius"))">Reduce Border Radius</button>
+<style>
+    /* iOS Style Classes */
+    .ios-container {
+        display: flex;
+        height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-    <div style="position: relative; width: 800px; height: 600px; border: 1px solid #ccc;">  
-        @foreach (var box in Boxes)  
-        {  
-            <div style="  
-                    position: absolute;  
-                    left:@($"{box.X}px");  
-                    top:@($"{box.Y}px");  
-                    width:@($"{box.Width}px");  
-                    height:@($"{box.Height}px");  
-                    background:@box.Color;  
-                    border-radius:@($"{box.BorderRadius}px");  
-                    border: 2px solid black;
-                    outline: @(box == SelectedBox ? "solid 1px" : "none")"
-                 type="button" @onclick="@(()=> SelectedBox = box)"></div>  
-        }  
-    </div>  
-</div>
-    <div style="display:flex; gap:10px">
-        <div>
-            <div>UndoList</div>
-            @foreach (var x in CommandManager.UndoList)
-            {
-                <div>@x</div>
-            }
+    .ios-canvas-panel {
+        outline: none;
+        width: 100%;
+        height: 100%;
+        position: relative;
+        padding: 20px;
+    }
 
+    .ios-toolbar {
+       display: flex
+;
+    /* flex-wrap: wrap; */
+    gap: 12px;
+    padding: 16px;
+    background: #FFFFFF;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+    }
+
+    .ios-button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.02);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .ios-group-title {
+        width: 100%;
+        font-size: 12px;
+        font-weight: 600;
+        color: #8E8E93;
+        margin-bottom: 6px;
+        padding-left: 4px;
+    }
+
+    .ios-btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .ios-btn-primary {
+        background-color: #007AFF;
+        color: white;
+    }
+
+    .ios-btn-primary:active {
+        background-color: #0062CC;
+    }
+
+    .ios-btn-secondary {
+        background-color: #E6E6E6;
+        color: #007AFF;
+    }
+
+    .ios-btn-secondary:active {
+        background-color: #D1D1D6;
+    }
+
+    .ios-canvas-area {
+        position: relative;
+        width: 100%;
+        height: calc(100% - 120px);
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .ios-box {
+        position: absolute;
+        border: 2px solid black;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .ios-box-selected {
+        outline: 2px solid #007AFF;
+    }
+
+    .ios-history-panel {
+            width: 40%;
+    padding: 20px;
+    position: fixed;
+    display: flex
+;
+    gap: 10px;
+    background: transparent;
+    right:0;
+    top:176px;
+    max-height:500px;
+    pointer-events: none;
+    }
+
+    .ios-history-card {
+        width: 100%;
+    background: transparent;
+    /* backdrop-filter: blur(1px); */
+    border-radius: 12px;
+    padding: 16px;
+    /* border: 1px solid rgba(0, 0, 0, 0.08); */
+    /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); */
+    margin-bottom: 16px;
+    pointer-events: none;
+    opacity: 0.8;
+    }
+
+    .ios-history-title {
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #3C3C43;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+    }
+
+    .ios-history-list {
+        font-family: monospace;
+        font-size: 13px;
+        color: #3C3C43;
+        line-height: 1.6;
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+
+    .ios-history-item {
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+    }
+
+    .ios-bullet {
+        color: #007AFF;
+        margin-right: 6px;
+        font-size: 10px;
+    }
+</style>
+
+<div class="ios-container">
+    <!-- Left Panel - Canvas and Controls -->
+    <div @onkeydown="HandleKey" tabindex="0" class="ios-canvas-panel">
+        <!-- iOS Style Toolbar -->
+        <div class="ios-toolbar">
+            <!-- Creation Group -->
+            <div class="ios-button-group">
+                <div class="ios-group-title">CREATION</div>
+                <button @onclick="AddBox" class="ios-btn ios-btn-primary">Add Box</button>
+            </div>
+            
+            <!-- History Group -->
+            <div class="ios-button-group">
+                <div class="ios-group-title">HISTORY</div>
+                <button @onclick="Undo" class="ios-btn ios-btn-secondary">Undo</button>
+                <button @onclick="Redo" class="ios-btn ios-btn-secondary">Redo</button>
+            </div>
+            
+            <!-- Size Group -->
+            <div class="ios-button-group">
+                <div class="ios-group-title">SIZE</div>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width + 10, box.Height + 10),"increase size"))" 
+                        class="ios-btn ios-btn-secondary">Increase Size</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width - 10, box.Height - 10),"reduce size"))" 
+                        class="ios-btn ios-btn-secondary">Reduce Size</button>
+            </div>
+            
+            <!-- Movement Group -->
+            <div class="ios-button-group">
+                <div class="ios-group-title">MOVEMENT</div>
+                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, -10, 0),"move left"))" 
+                        class="ios-btn ios-btn-secondary">Move Left</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 10, 0),"move right"))" 
+                        class="ios-btn ios-btn-secondary">Move Right</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, 10),"move down"))" 
+                        class="ios-btn ios-btn-secondary">Move Down</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, -10),"move up"))" 
+                        class="ios-btn ios-btn-secondary">Move Up</button>
+            </div>
+            
+            <!-- Styling Group -->
+            <div class="ios-button-group">
+                <div class="ios-group-title">STYLING</div>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeColorCommand(box, "#e74c3c"),"change color"))" 
+                        class="ios-btn ios-btn-primary">Change Color</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius + 5),"increase border radius"))" 
+                        class="ios-btn ios-btn-secondary">+ Radius</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius - 5),"reduce border radius"))" 
+                        class="ios-btn ios-btn-secondary">- Radius</button>
+            </div>
         </div>
-
-        <div>
-            <div>RedoList</div>
-            @foreach (var x in CommandManager.RedoList)
-            {
-                <div>@x</div>
-            }
-
+        
+        <!-- Canvas Area -->
+        <div class="ios-canvas-area">  
+            @foreach (var box in Boxes)  
+            {  
+                <div class="ios-box @(box == SelectedBox ? "ios-box-selected" : "")" 
+                     style="left:@($"{box.X}px"); top:@($"{box.Y}px"); width:@($"{box.Width}px"); height:@($"{box.Height}px"); background:@box.Color; border-radius:@($"{box.BorderRadius}px");"
+                     type="button" @onclick="@(()=> SelectedBox = box)"></div>  
+            }  
+        </div>
+    </div>
+    
+    <!-- Floating History Panels (Right Side) -->
+    <div class="ios-history-panel">
+        <!-- Undo History Panel -->
+        <div class="ios-history-card">
+            <div class="ios-history-title">
+                <span class="ios-bullet">↩</span>
+                UNDO HISTORY
+            </div>
+            <div class="ios-history-list">
+                @foreach (var x in CommandManager.UndoList)
+                {
+                    <div class="ios-history-item">
+                        <span class="ios-bullet">•</span>
+                        @x
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Redo History Panel -->
+        <div class="ios-history-card">
+            <div class="ios-history-title">
+                <span class="ios-bullet">↪</span>
+                REDO HISTORY
+            </div>
+            <div class="ios-history-list">
+                @foreach (var x in CommandManager.RedoList)
+                {
+                    <div class="ios-history-item">
+                        <span class="ios-bullet">•</span>
+                        @x
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </div>
