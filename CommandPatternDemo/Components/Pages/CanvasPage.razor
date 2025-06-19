@@ -5,6 +5,21 @@
 @inject ShortcutManager ShortcutManager  
 
 <style>
+
+    /* Add this to your existing styles */
+    .ios-btn, .ios-box {
+        -webkit-user-select: none; /* Safari */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* IE10+/Edge */
+        user-select: none; /* Standard */
+        -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
+    }
+
+    /* For Android devices */
+    .ios-btn, .ios-box {
+        -webkit-touch-callout: none; /* Disable callout on long-touch */
+    }
+
     /* iOS Style Classes */
     .ios-container {
         display: flex;
@@ -17,19 +32,22 @@
         width: 100%;
         height: 100%;
         position: relative;
-        padding: 20px;
+        
     }
 
     .ios-toolbar {
-       display: flex
-;
-    /* flex-wrap: wrap; */
-    gap: 12px;
-    padding: 16px;
-    background: #FFFFFF;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    margin-bottom: 20px;
+        display: flex;
+        /* flex-wrap: wrap; */
+        gap: 12px;
+        /* padding: 16px; */
+        /* background: #FFFFFF; */
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgb(0 0 0 / 0%);
+        margin-bottom: 20px;
+        position: fixed;
+        top: 16px;
+        left: 49px;
+        z-index: 1;
     }
 
     .ios-button-group {
@@ -39,7 +57,9 @@
         padding: 10px;
         border-radius: 10px;
         background: rgba(0, 0, 0, 0.02);
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(9px);
+        border: 0 4px 12px rgb(0 0 0 / 0%);
+        box-shadow: -2px 3px 12px rgb(0 0 0 / 35%);
     }
 
     .ios-group-title {
@@ -66,8 +86,8 @@
     }
 
     .ios-btn-primary {
-        background-color: #007AFF;
-        color: white;
+        background-color: #3b8bff;
+        color: #ffffff;
     }
 
     .ios-btn-primary:active {
@@ -75,8 +95,8 @@
     }
 
     .ios-btn-secondary {
-        background-color: #E6E6E6;
-        color: #007AFF;
+        background-color: #3b8bff;
+        color: #ffffff;
     }
 
     .ios-btn-secondary:active {
@@ -85,12 +105,13 @@
 
     .ios-canvas-area {
         position: relative;
-        width: 100%;
-        height: calc(100% - 120px);
+        width: calc(100% - 16px);
+        height: calc(100% - 16px);
+        margin: 8px;
         border: 1px solid #ccc;
         border-radius: 12px;
         background: white;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgb(0 0 0 / 33%);
     }
 
     .ios-box {
@@ -104,17 +125,16 @@
     }
 
     .ios-history-panel {
-            width: 40%;
-    padding: 20px;
-    position: fixed;
-    display: flex
-;
-    gap: 10px;
-    background: transparent;
-    right:0;
-    top:176px;
-    max-height:500px;
-    pointer-events: none;
+        width: 40%;
+        padding: 20px;
+        position: fixed;
+        display: flex;
+        gap: 10px;
+        background: transparent;
+        right: 17px;
+        top: 69px;
+        max-height: 500px;
+        pointer-events: none;
     }
 
     .ios-history-card {
@@ -163,69 +183,90 @@
     }
 </style>
 
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
 <div class="ios-container">
     <!-- Left Panel - Canvas and Controls -->
     <div @onkeydown="HandleKey" tabindex="0" class="ios-canvas-panel">
-        <!-- iOS Style Toolbar -->
+        <!-- iOS Style Toolbar with Icon Buttons -->
         <div class="ios-toolbar">
             <!-- Creation Group -->
             <div class="ios-button-group">
-                <div class="ios-group-title">CREATION</div>
-                <button @onclick="AddBox" class="ios-btn ios-btn-primary">Add Box</button>
+                <button @onclick="AddBox" class="ios-btn ios-btn-primary" title="Add Box">
+                    <i class="material-icons ios-btn-icon">add</i>
+                </button>
             </div>
-            
+
             <!-- History Group -->
             <div class="ios-button-group">
-                <div class="ios-group-title">HISTORY</div>
-                <button @onclick="Undo" class="ios-btn ios-btn-secondary">Undo</button>
-                <button @onclick="Redo" class="ios-btn ios-btn-secondary">Redo</button>
+                <button @onclick="Undo" class="ios-btn ios-btn-secondary" title="Undo">
+                    <i class="material-icons ios-btn-icon">undo</i>
+                </button>
+                <button @onclick="Redo" class="ios-btn ios-btn-secondary" title="Redo">
+                    <i class="material-icons ios-btn-icon">redo</i>
+                </button>
             </div>
-            
+
             <!-- Size Group -->
             <div class="ios-button-group">
-                <div class="ios-group-title">SIZE</div>
-                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width + 10, box.Height + 10),"increase size"))" 
-                        class="ios-btn ios-btn-secondary">Increase Size</button>
-                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width - 10, box.Height - 10),"reduce size"))" 
-                        class="ios-btn ios-btn-secondary">Reduce Size</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width + 10, box.Height + 10), "increase size"))"
+                        class="ios-btn ios-btn-secondary" title="Increase Size">
+                    <i class="material-icons ios-btn-icon">zoom_in</i>
+                </button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width - 10, box.Height - 10), "reduce size"))"
+                        class="ios-btn ios-btn-secondary" title="Reduce Size">
+                    <i class="material-icons ios-btn-icon">zoom_out</i>
+                </button>
             </div>
-            
+
             <!-- Movement Group -->
             <div class="ios-button-group">
-                <div class="ios-group-title">MOVEMENT</div>
-                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, -10, 0),"move left"))" 
-                        class="ios-btn ios-btn-secondary">Move Left</button>
-                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 10, 0),"move right"))" 
-                        class="ios-btn ios-btn-secondary">Move Right</button>
-                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, 10),"move down"))" 
-                        class="ios-btn ios-btn-secondary">Move Down</button>
-                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, -10),"move up"))" 
-                        class="ios-btn ios-btn-secondary">Move Up</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, -10, 0), "move left"))"
+                        class="ios-btn ios-btn-secondary" title="Move Left">
+                    <i class="material-icons ios-btn-icon">arrow_left</i>
+                </button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 10, 0), "move right"))"
+                        class="ios-btn ios-btn-secondary" title="Move Right">
+                    <i class="material-icons ios-btn-icon">arrow_right</i>
+                </button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, 10), "move down"))"
+                        class="ios-btn ios-btn-secondary" title="Move Down">
+                    <i class="material-icons ios-btn-icon">arrow_downward</i>
+                </button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, 0, -10), "move up"))"
+                        class="ios-btn ios-btn-secondary" title="Move Up">
+                    <i class="material-icons ios-btn-icon">arrow_upward</i>
+                </button>
             </div>
-            
+
             <!-- Styling Group -->
             <div class="ios-button-group">
-                <div class="ios-group-title">STYLING</div>
-                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeColorCommand(box, "#e74c3c"),"change color"))" 
-                        class="ios-btn ios-btn-primary">Change Color</button>
-                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius + 5),"increase border radius"))" 
-                        class="ios-btn ios-btn-secondary">+ Radius</button>
-                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius - 5),"reduce border radius"))" 
-                        class="ios-btn ios-btn-secondary">- Radius</button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeColorCommand(box, "#e74c3c"), "change color"))"
+                        class="ios-btn ios-btn-primary" title="Change Color">
+                    <i class="material-icons ios-btn-icon">palette</i>
+                </button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius + 5), "increase border radius"))"
+                        class="ios-btn ios-btn-secondary" title="Increase Radius">
+                    <i class="material-icons ios-btn-icon">rounded_corner</i>
+                </button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ChangeBorderRadiusCommand(box, box.BorderRadius - 5), "reduce border radius"))"
+                        class="ios-btn ios-btn-secondary" title="Reduce Radius">
+                    <i class="material-icons ios-btn-icon">crop_square</i>
+                </button>
             </div>
         </div>
-        
+
         <!-- Canvas Area -->
-        <div class="ios-canvas-area">  
-            @foreach (var box in Boxes)  
-            {  
-                <div class="ios-box @(box == SelectedBox ? "ios-box-selected" : "")" 
+        <div class="ios-canvas-area">
+            @foreach (var box in Boxes)
+            {
+                <div class="ios-box @(box == SelectedBox ? "ios-box-selected" : "")"
                      style="left:@($"{box.X}px"); top:@($"{box.Y}px"); width:@($"{box.Width}px"); height:@($"{box.Height}px"); background:@box.Color; border-radius:@($"{box.BorderRadius}px");"
-                     type="button" @onclick="@(()=> SelectedBox = box)"></div>  
-            }  
+                     type="button" @onclick="@(() => SelectedBox = box)"></div>
+            }
         </div>
     </div>
-    
+
     <!-- Floating History Panels (Right Side) -->
     <div class="ios-history-panel">
         <!-- Undo History Panel -->
@@ -244,7 +285,7 @@
                 }
             </div>
         </div>
-        
+
         <!-- Redo History Panel -->
         <div class="ios-history-card">
             <div class="ios-history-title">
@@ -263,7 +304,6 @@
         </div>
     </div>
 </div>
-
 
 @code {
     private List<Box> Boxes = new();  
