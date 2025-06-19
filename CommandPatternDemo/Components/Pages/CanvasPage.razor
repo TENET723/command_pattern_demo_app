@@ -197,28 +197,6 @@
                 </button>
             </div>
 
-            <!-- History Group -->
-            <div class="ios-button-group">
-                <button @onclick="Undo" class="ios-btn ios-btn-secondary" title="Undo">
-                    <i class="material-icons ios-btn-icon">undo</i>
-                </button>
-                <button @onclick="Redo" class="ios-btn ios-btn-secondary" title="Redo">
-                    <i class="material-icons ios-btn-icon">redo</i>
-                </button>
-            </div>
-
-            <!-- Size Group -->
-            <div class="ios-button-group">
-                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width + 10, box.Height + 10), "increase size"))"
-                        class="ios-btn ios-btn-secondary" title="Increase Size">
-                    <i class="material-icons ios-btn-icon">zoom_in</i>
-                </button>
-                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width - 10, box.Height - 10), "reduce size"))"
-                        class="ios-btn ios-btn-secondary" title="Reduce Size">
-                    <i class="material-icons ios-btn-icon">zoom_out</i>
-                </button>
-            </div>
-
             <!-- Movement Group -->
             <div class="ios-button-group">
                 <button @onclick="@(() => ExecuteIfSelected(box => new MoveBoxCommand(box, -10, 0), "move left"))"
@@ -239,6 +217,18 @@
                 </button>
             </div>
 
+            <!-- Size Group -->
+            <div class="ios-button-group">
+                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width + 10, box.Height + 10), "increase size"))"
+                        class="ios-btn ios-btn-secondary" title="Increase Size">
+                    <i class="material-icons ios-btn-icon">zoom_in</i>
+                </button>
+                <button @onclick="@(() => ExecuteIfSelected(box => new ResizeBoxCommand(box, box.Width - 10, box.Height - 10), "reduce size"))"
+                        class="ios-btn ios-btn-secondary" title="Reduce Size">
+                    <i class="material-icons ios-btn-icon">zoom_out</i>
+                </button>
+            </div>
+
             <!-- Styling Group -->
             <div class="ios-button-group">
                 <button @onclick="@(() => ExecuteIfSelected(box => new ChangeColorCommand(box, "#e74c3c"), "change color"))"
@@ -254,6 +244,17 @@
                     <i class="material-icons ios-btn-icon">crop_square</i>
                 </button>
             </div>
+
+            <!-- History Group -->
+            <div class="ios-button-group">
+                <button @onclick="Undo" class="ios-btn ios-btn-secondary" title="Undo">
+                    <i class="material-icons ios-btn-icon">undo</i>
+                </button>
+                <button @onclick="Redo" class="ios-btn ios-btn-secondary" title="Redo">
+                    <i class="material-icons ios-btn-icon">redo</i>
+                </button>
+            </div>
+
         </div>
 
         <!-- Canvas Area -->
